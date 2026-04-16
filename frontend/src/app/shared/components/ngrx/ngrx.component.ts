@@ -3,9 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Component, inject, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
-import { loadTopics } from './ngrx.actions';
-import { selectAllTopics, selectError, selectLoading } from './ngrx.selectors';
-import { NgrxQuiz, NgrxTopic } from './ngrx.types';
+import { NgrxTopic } from '../../models/ngrx/ngrx-topic.model';
+import { NgrxQuiz } from '../../models/ngrx/ngrx-quiz.model';
+import { loadTopics } from '../../stores/ngrx/ngrx.actions';
+import { selectAllTopics, selectLoading } from '../../stores/ngrx/ngrx.selectors';
 
 @Component({
   selector: 'app-ngrx',

@@ -1,32 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { NgrxComponent } from './ngrx/ngrx.component';
-import { RxjsComponent } from './rxjs/rxjs.component';
-import { SignalsComponent } from './signals/signals.component';
-
-interface PracticeCategorySummary {
-  slug: string;
-  title: string;
-  description: string;
-  orderIndex: number;
-  itemCount: number;
-}
-
-interface PracticeItem {
-  title: string;
-  summary: string;
-  details: string;
-  whyItMatters: string;
-  goodExample: string;
-  badExample: string;
-  tags: string[];
-  orderIndex: number;
-}
-
-interface PracticeCategoryDetails extends PracticeCategorySummary {
-  items: PracticeItem[];
-}
+import { RxjsComponent } from './shared/components/rxjs/rxjs.component';
+import { SignalsComponent } from './shared/components/signals/signals.component';
+import { NgrxComponent } from './shared/components/ngrx/ngrx.component';
 
 @Component({
   selector: 'app-root',

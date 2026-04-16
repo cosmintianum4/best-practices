@@ -17,25 +17,6 @@ import {
   toArray,
 } from 'rxjs';
 
-interface RxjsTopic {
-  title: string;
-  description: string;
-  keyPoints: string[];
-  example: string;
-  analogy: string;
-  tag: string;
-  orderIndex: number;
-}
-
-interface RxjsQuiz {
-  question: string;
-  codeSnippet: string;
-  options: string[];
-  correctIndex: number;
-  explanation: string;
-  orderIndex: number;
-}
-
 @Component({
   selector: 'app-rxjs',
   templateUrl: './rxjs.component.html',
