@@ -1,0 +1,20 @@
+<nav class="sidebar" [class.sidebar--collapsed]="!sidebarOpen()">
+  <button class="sidebar-toggle" type="button" (click)="toggleSidebar()">
+    <span class="material-icons">menu</span>
+  </button>
+
+  <ul class="sidebar-nav">
+    @for (section of sidebarSections; track section.id) {
+      <li
+        class="sidebar-nav-item"
+        routerLinkActive="sidebar-nav-item--active"
+        [routerLink]="['/', section.id]"
+      >
+        <span class="sidebar-icon">{{ section.icon }}</span>
+        @if (sidebarOpen()) {
+          <span class="sidebar-label">{{ section.label }}</span>
+        }
+      </li>
+    }
+  </ul>
+</nav>
