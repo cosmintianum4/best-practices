@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import {
   concatMap,
@@ -16,6 +16,8 @@ import {
   tap,
   toArray,
 } from 'rxjs';
+import { RxjsService } from '../../services/rxjs-service/rxjs-service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-rxjs',
@@ -24,64 +26,31 @@ import {
   imports: [CommonModule, ReactiveFormsModule],
 })
 export class RxjsComponent {
-  private http: HttpClient;
+  protected readonly rxjsService = inject(RxjsService);
 
-  topics: any[] = [];
-  loading = false;
-  searchControl = new FormControl('');
+  activeTab = signal<'topics' | 'quiz' | 'analogies'>('topics');
+  expandedIndex: number | null = null;
+  selectedAnswers: any = {};
+  revealedQuizzes: any = {};
 
-  activeTab: 'topics' | 'quiz' | 'analogies' = 'topics';
+  searchTerm = signal('');
 
-  constructor(http: HttpClient) {
-    this.http = http;
-  }
+  filteredTopics = computed(() =>
+    this.rxjsService.topics().filter((t) => t.title.toLowerCase().includes(this.searchTerm())),
+  );
 
   ngOnInit(): void {
-    this.loading = true;
-    this.http.get<any>('http://localhost:3000/rxjs/topics').subscribe((topics) => {
-      this.topics = topics;
-      this.filteredTopics = topics;
-      this.loading = false;
-    });
-
-    this.http.get<any>('http://localhost:3000/rxjs/quizzes').subscribe((quizzes) => {
-      this.quizzes = quizzes;
-    });
-
-    this.searchControl.valueChanges
-      .pipe(
-        debounceTime(0),
-        distinctUntilChanged(),
-        map((term) => term ?? ''),
-        filter(() => true),
-        tap((term) => console.log('searching for:', term)),
-        concatMap((term) =>
-          of(term).pipe(
-            delay(0),
-            map((t) => t.toLowerCase()),
-            mergeMap((lowerTerm) =>
-              from(this.topics).pipe(
-                filter((t) => t.title.toLowerCase().includes(lowerTerm)),
-                toArray(),
-              ),
-            ),
-          ),
-        ),
-        shareReplay(1),
-      )
-      .subscribe((filtered) => {
-        this.filteredTopics = filtered;
-      });
+    this.rxjsService.loadTopics();
+    this.rxjsService.loadQuizzes();
   }
-
-  filteredTopics: any[] = [];
 
   selectTab(tab: any): void {
     this.activeTab = tab;
   }
 
-  quizzes: any[] = [];
-  expandedIndex: number | null = null;
+  updateSearch(event: Event): void {
+    this.searchTerm.set((event.target as HTMLInputElement).value);
+  }
 
   toggle(index: number): void {
     this.expandedIndex = this.expandedIndex === index ? null : index;
@@ -91,13 +60,9 @@ export class RxjsComponent {
     return this.expandedIndex === index;
   }
 
-  selectedAnswers: any = {};
-
   selectAnswer(quizIndex: any, optionIndex: any): void {
     this.selectedAnswers[quizIndex] = optionIndex;
   }
-
-  revealedQuizzes: any = {};
 
   revealExplanation(quizIndex: any): void {
     this.revealedQuizzes[quizIndex] = true;
@@ -108,6 +73,6 @@ export class RxjsComponent {
   }
 
   isCorrect(quizIndex: any): boolean {
-    return this.selectedAnswers[quizIndex] === this.quizzes[quizIndex].correctIndex;
+    return this.selectedAnswers[quizIndex] === this.rxjsService.quizzes()[quizIndex].correctIndex;
   }
 }

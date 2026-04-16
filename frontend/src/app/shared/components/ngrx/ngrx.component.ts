@@ -1,12 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
-import { NgrxTopic } from '../../models/ngrx/ngrx-topic.model';
-import { NgrxQuiz } from '../../models/ngrx/ngrx-quiz.model';
 import { loadTopics } from '../../stores/ngrx/ngrx.actions';
 import { selectAllTopics, selectLoading } from '../../stores/ngrx/ngrx.selectors';
+import { NgrxService } from '../../services/ngrx-service/ngrx-service';
 
 @Component({
   selector: 'app-ngrx',
@@ -16,52 +13,48 @@ import { selectAllTopics, selectLoading } from '../../stores/ngrx/ngrx.selectors
 })
 export class NgrxComponent implements OnInit {
   private store = inject(Store);
-  private http = inject(HttpClient);
+  protected ngrxService = inject(NgrxService);
 
-  topics$: Observable<NgrxTopic[]> = this.store.select(selectAllTopics);
-  loading$: Observable<any> = this.store.select(selectLoading);
+  topics = this.store.selectSignal(selectAllTopics);
+  loading = this.store.selectSignal(selectLoading);
 
-  quizzes: NgrxQuiz[] = [];
-
-  activeTab: 'concepts' | 'flow' | 'quiz' | 'analogies' = 'concepts';
-  expandedIndex: number | null = null;
-
-  selectedAnswers: Record<number, number> = {};
-  revealedQuizzes: Record<number, boolean> = {};
+  activeTab = signal<'concepts' | 'flow' | 'quiz' | 'analogies'>('concepts');
+  expandedIndex = signal<number | null>(null);
+  selectedAnswers = signal<Record<number, number>>({});
+  revealedQuizzes = signal<Record<number, boolean>>({});
 
   ngOnInit(): void {
     this.store.dispatch(loadTopics());
-
-    this.http
-      .get<NgrxQuiz[]>('http://localhost:3000/ngrx/quizzes')
-      .subscribe((quizzes) => (this.quizzes = quizzes));
+    this.ngrxService.loadQuizzes();
   }
 
   selectTab(tab: 'concepts' | 'flow' | 'quiz' | 'analogies'): void {
-    this.activeTab = tab;
+    this.activeTab.set(tab);
   }
 
-  toggle(index: any): void {
-    this.expandedIndex = this.expandedIndex === index ? null : index;
+  toggle(index: number): void {
+    this.expandedIndex.set(this.expandedIndex() === index ? null : index);
   }
 
-  isExpanded(index: any): boolean {
-    return this.expandedIndex === index;
+  isExpanded(index: number): boolean {
+    return this.expandedIndex() === index;
   }
 
-  selectAnswer(quizIndex: any, optionIndex: number): void {
-    this.selectedAnswers[quizIndex] = optionIndex;
+  selectAnswer(quizIndex: number, optionIndex: number): void {
+    this.selectedAnswers.update((prev) => ({ ...prev, [quizIndex]: optionIndex }));
   }
 
-  revealExplanation(quizIndex: any): void {
-    this.revealedQuizzes[quizIndex] = true;
+  revealExplanation(quizIndex: number): void {
+    this.revealedQuizzes.update((prev) => ({ ...prev, [quizIndex]: true }));
   }
 
-  isAnswered(quizIndex: any): boolean {
-    return this.selectedAnswers[quizIndex] !== undefined;
+  isAnswered(quizIndex: number): boolean {
+    return this.selectedAnswers()[quizIndex] !== undefined;
   }
 
-  isCorrect(quizIndex: any): boolean {
-    return this.selectedAnswers[quizIndex] === this.quizzes[quizIndex]?.correctIndex;
+  isCorrect(quizIndex: number): boolean {
+    return (
+      this.selectedAnswers()[quizIndex] === this.ngrxService.quizzes()[quizIndex]?.correctIndex
+    );
   }
 }

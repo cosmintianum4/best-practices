@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Component, effect, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { SignalsService } from '../../services/signals-service/signals-service';
 
 @Component({
   selector: 'app-signals',
@@ -9,51 +9,29 @@ import { Component, effect, signal } from '@angular/core';
   imports: [CommonModule],
 })
 export class SignalsComponent {
-  private http: HttpClient;
-
-  topics = signal<any[]>([]);
-  loading = signal(false);
+  protected readonly signalsService = inject(SignalsService);
 
   activeTab = signal<'topics' | 'quiz' | 'analogies'>('topics');
   searchTerm = signal('');
-
-  filteredTopics = signal<any[]>([]);
-
   expandedIndex = signal<number | null>(null);
-
-  quizzes = signal<any[]>([]);
   selectedAnswers = signal<Record<number, number>>({});
   revealedQuizzes = signal<Record<number, boolean>>({});
 
-  constructor(http: HttpClient) {
-    this.http = http;
+  filteredTopics = computed(() =>
+    this.signalsService
+      .topics()
+      .filter((t) => t.title.toLowerCase().includes(this.searchTerm().toLowerCase())),
+  );
 
-    effect(() => {
-      const term = this.searchTerm().toLowerCase();
-      this.filteredTopics.set(this.topics().filter((t) => t.title.toLowerCase().includes(term)));
-    });
-
+  constructor() {
     effect(() => {
       console.log('[Signals] active tab:', this.activeTab());
     });
   }
 
   ngOnInit(): void {
-    this.loading.set(true);
-
-    this.http.get<any[]>('http://localhost:3000/signals/topics').subscribe({
-      next: (topics) => {
-        this.topics.set(topics);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-      },
-    });
-
-    this.http.get<any[]>('http://localhost:3000/signals/quizzes').subscribe({
-      next: (quizzes) => this.quizzes.set(quizzes),
-    });
+    this.signalsService.loadTopics();
+    this.signalsService.loadQuizzes();
   }
 
   selectTab(tab: 'topics' | 'quiz' | 'analogies'): void {
@@ -85,6 +63,8 @@ export class SignalsComponent {
   }
 
   isCorrect(quizIndex: number): boolean {
-    return this.selectedAnswers()[quizIndex] === this.quizzes()[quizIndex]?.correctIndex;
+    return (
+      this.selectedAnswers()[quizIndex] === this.signalsService.quizzes()[quizIndex]?.correctIndex
+    );
   }
 }
