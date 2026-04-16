@@ -44,8 +44,8 @@ export class RxjsComponent {
     this.rxjsService.loadQuizzes();
   }
 
-  selectTab(tab: any): void {
-    this.activeTab = tab;
+  selectTab(tab: 'topics' | 'quiz' | 'analogies'): void {
+    this.activeTab.set(tab);
   }
 
   updateSearch(event: Event): void {
